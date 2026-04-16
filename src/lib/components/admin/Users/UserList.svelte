@@ -350,6 +350,29 @@
 						</div>
 					</th>
 
+					<th
+						scope="col"
+						class="px-2.5 py-2 cursor-pointer select-none"
+						on:click={() => setSortKey('expires_at')}
+					>
+						<div class="flex gap-1.5 items-center">
+							{$i18n.t('Bitiş Tarihi')}
+							{#if orderBy === 'expires_at'}
+								<span class="font-normal"
+									>{#if direction === 'asc'}
+										<ChevronUp className="size-2" />
+									{:else}
+										<ChevronDown className="size-2" />
+									{/if}
+								</span>
+							{:else}
+								<span class="invisible">
+									<ChevronUp className="size-2" />
+								</span>
+							{/if}
+						</div>
+					</th>
+
 					<th scope="col" class="px-2.5 py-2 text-right" />
 				</tr>
 			</thead>
@@ -385,6 +408,9 @@
 								</ProfilePreview>
 
 								<div class="font-medium truncate">{user.name}</div>
+								{#if user.role === 'admin'}
+									<span title="Admin">👑</span>
+								{/if}
 
 								{#if user?.last_active_at && Date.now() / 1000 - user.last_active_at < 180}
 									<div>
@@ -406,6 +432,25 @@
 
 						<td class=" px-3 py-1">
 							{dayjs(user.created_at * 1000).format('LL')}
+						</td>
+
+						<td class="px-3 py-1">
+							{#if user.expires_at}
+								{@const now = Date.now() / 1000}
+								{@const daysLeft = Math.ceil((user.expires_at - now) / 86400)}
+								<span class="font-medium {daysLeft > 0 ? 'text-green-500' : 'text-red-500'}">
+									{dayjs(user.expires_at * 1000).format('LL')}
+								</span>
+								<div class="text-[10px] {daysLeft > 0 ? 'text-green-400' : 'text-red-400'}">
+									{#if daysLeft > 0}
+										{daysLeft} gün kaldı
+									{:else}
+										Süresi doldu
+									{/if}
+								</div>
+							{:else}
+								<span class="text-gray-400">—</span>
+							{/if}
 						</td>
 
 						<td class="px-3 py-1 text-right">

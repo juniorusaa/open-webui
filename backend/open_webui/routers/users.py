@@ -614,6 +614,7 @@ async def update_user_by_id(
                 'name': form_data.name,
                 'email': form_data.email.lower(),
                 'profile_image_url': form_data.profile_image_url,
+                'expires_at': form_data.expires_at,
             },
             db=db,
         )
@@ -680,3 +681,67 @@ async def delete_user_by_id(user_id: str, user=Depends(get_admin_user), db: Sess
 @router.get('/{user_id}/groups')
 async def get_user_groups_by_id(user_id: str, user=Depends(get_admin_user), db: Session = Depends(get_session)):
     return Groups.get_groups_by_member_id(user_id, db=db)
+
+
+############################
+# SetUserExpiresAt
+############################
+
+
+class SetExpiresAtForm(BaseModel):
+    expires_at: int  # epoch timestamp
+
+
+@router.post('/{user_id}/expires', response_model=Optional[UserModel])
+async def set_user_expires_at(
+    user_id: str,
+    form_data: SetExpiresAtForm,
+    user=Depends(get_admin_user),
+    db: Session = Depends(get_session),
+):
+    """Set the expiry date for a user (admin only)."""
+    user = Users.get_user_by_id(user_id, db=db)
+    if user:
+        updated_user = Users.update_user_expires_at(user_id, form_data.expires_at, db=db)
+        if updated_user:
+            return updated_user
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.DEFAULT(),
+        )
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=ERROR_MESSAGES.USER_NOT_FOUND,
+    )
+
+
+############################
+# AddDaysToUser
+############################
+
+
+class AddDaysForm(BaseModel):
+    days: int
+
+
+@router.post('/{user_id}/add-days', response_model=Optional[UserModel])
+async def add_days_to_user(
+    user_id: str,
+    form_data: AddDaysForm,
+    user=Depends(get_admin_user),
+    db: Session = Depends(get_session),
+):
+    """Add days to a user's expiry date (admin only)."""
+    user = Users.get_user_by_id(user_id, db=db)
+    if user:
+        updated_user = Users.add_days_to_user(user_id, form_data.days, db=db)
+        if updated_user:
+            return updated_user
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.DEFAULT(),
+        )
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=ERROR_MESSAGES.USER_NOT_FOUND,
+    )

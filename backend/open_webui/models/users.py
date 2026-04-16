@@ -78,6 +78,7 @@ class User(Base):
     last_active_at = Column(BigInteger)
     updated_at = Column(BigInteger)
     created_at = Column(BigInteger)
+    expires_at = Column(BigInteger, nullable=True)
 
 
 class UserModel(BaseModel):
@@ -111,6 +112,7 @@ class UserModel(BaseModel):
     last_active_at: int  # timestamp in epoch
     updated_at: int  # timestamp in epoch
     created_at: int  # timestamp in epoch
+    expires_at: Optional[int] = None  # timestamp in epoch, nullable
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -230,6 +232,7 @@ class UserNameResponse(BaseModel):
     id: str
     name: str
     role: str
+    expires_at: Optional[int] = None
 
 
 class UserResponse(UserNameResponse):
@@ -252,6 +255,7 @@ class UserUpdateForm(BaseModel):
     email: str
     profile_image_url: str
     password: Optional[str] = None
+    expires_at: Optional[int] = None
 
     @field_validator('profile_image_url')
     @classmethod
@@ -678,6 +682,45 @@ class UsersTable:
                 return UserModel.model_validate(user)
         except Exception as e:
             print(e)
+            return None
+
+    def update_user_expires_at(self, id: str, expires_at: int, db: Optional[Session] = None) -> Optional[UserModel]:
+        """Set the expiry date for a user (epoch timestamp)."""
+        try:
+            with get_db_context(db) as db:
+                user = db.query(User).filter_by(id=id).first()
+                if not user:
+                    return None
+                user.expires_at = expires_at
+                db.commit()
+                db.refresh(user)
+                return UserModel.model_validate(user)
+        except Exception:
+            return None
+
+    def add_days_to_user(self, id: str, days: int, db: Optional[Session] = None) -> Optional[UserModel]:
+        """Add days to a user's expiry date. If user has no expiry or expired, start from today."""
+        try:
+            with get_db_context(db) as db:
+                user = db.query(User).filter_by(id=id).first()
+                if not user:
+                    return None
+                
+                now = int(time.time())
+                current_expiry = user.expires_at
+                
+                # If no expiry or expiry is in the past, start from today
+                if current_expiry is None or current_expiry < now:
+                    new_expiry = now + (days * 86400)
+                else:
+                    # Add days to current expiry
+                    new_expiry = current_expiry + (days * 86400)
+                
+                user.expires_at = new_expiry
+                db.commit()
+                db.refresh(user)
+                return UserModel.model_validate(user)
+        except Exception:
             return None
 
     def update_user_settings_by_id(self, id: str, updated: dict, db: Optional[Session] = None) -> Optional[UserModel]:

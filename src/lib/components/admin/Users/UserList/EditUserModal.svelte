@@ -6,7 +6,7 @@
 
 	import { goto } from '$app/navigation';
 
-	import { updateUserById, getUserGroupsById } from '$lib/apis/users';
+	import { updateUserById, getUserGroupsById, setUserExpiry, addDaysToUser } from '$lib/apis/users';
 
 	import Modal from '$lib/components/common/Modal.svelte';
 	import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -39,7 +39,43 @@
 		role: 'pending',
 		name: '',
 		email: '',
-		password: ''
+		password: '',
+		expires_at: null
+	};
+
+	let expiryDate = '';
+	let addDaysValue = 30;
+
+	$: if (selectedUser?.expires_at) {
+		const d = new Date(selectedUser.expires_at * 1000);
+		expiryDate = d.toISOString().split('T')[0];
+	} else {
+		expiryDate = '';
+	}
+
+	const setExpiryHandler = async () => {
+		if (!expiryDate) return;
+		const epochSec = Math.floor(new Date(expiryDate).getTime() / 1000);
+		const res = await setUserExpiry(localStorage.token, selectedUser.id, epochSec).catch((e) => {
+			toast.error(`${e}`);
+			return null;
+		});
+		if (res) {
+			toast.success('Bitiş tarihi güncellendi');
+			dispatch('save');
+		}
+	};
+
+	const addDaysHandler = async () => {
+		if (!addDaysValue || addDaysValue < 1) return;
+		const res = await addDaysToUser(localStorage.token, selectedUser.id, addDaysValue).catch((e) => {
+			toast.error(`${e}`);
+			return null;
+		});
+		if (res) {
+			toast.success(`${addDaysValue} gün eklendi`);
+			dispatch('save');
+		}
 	};
 
 	let userGroups: any[] | null = null;
@@ -213,6 +249,59 @@
 												required={false}
 											/>
 										</div>
+									</div>
+								</div>
+
+								<!-- Üyelik Bitiş Tarihi -->
+								<div class="flex flex-col w-full mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+									<div class="mb-1 text-xs text-gray-500 font-semibold">{$i18n.t('Üyelik Bitiş Tarihi')}</div>
+									
+									{#if selectedUser?.expires_at}
+										{@const now = Date.now() / 1000}
+										{@const daysLeft = Math.ceil((selectedUser.expires_at - now) / 86400)}
+										<div class="text-xs mb-2 {daysLeft > 0 ? 'text-green-500' : 'text-red-500'}">
+											{#if daysLeft > 0}
+												{daysLeft} gün kaldı
+											{:else}
+												Süresi doldu
+											{/if}
+										</div>
+									{/if}
+
+									<div class="flex gap-2 items-end">
+										<div class="flex-1">
+											<input
+												class="w-full text-sm bg-transparent outline-hidden border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
+												type="date"
+												bind:value={expiryDate}
+											/>
+										</div>
+										<button
+											type="button"
+											class="px-3 py-1 text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white rounded"
+											on:click={setExpiryHandler}
+										>
+											Ayarla
+										</button>
+									</div>
+
+									<div class="flex gap-2 items-end mt-2">
+										<div class="flex-1">
+											<input
+												class="w-full text-sm bg-transparent outline-hidden border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
+												type="number"
+												min="1"
+												bind:value={addDaysValue}
+												placeholder="Gün sayısı"
+											/>
+										</div>
+										<button
+											type="button"
+											class="px-3 py-1 text-xs font-medium bg-green-500 hover:bg-green-600 text-white rounded"
+											on:click={addDaysHandler}
+										>
+											Gün Ekle
+										</button>
 									</div>
 								</div>
 							</div>

@@ -1,0 +1,64 @@
+import { WEBUI_API_BASE_URL } from '$lib/constants';
+
+export const getCoupons = async (token: string) => {
+	let error = null;
+	const res = await fetch(`${WEBUI_API_BASE_URL}/coupons`, {
+		method: 'GET',
+		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+	})
+		.then(async (res) => { if (!res.ok) throw await res.json(); return res.json(); })
+		.catch((err) => { console.error(err); error = err.detail; return null; });
+	if (error) throw error;
+	return res;
+};
+
+export const createCoupon = async (token: string, data: { code: string; days: number; max_usage: number; note?: string }) => {
+	let error = null;
+	const res = await fetch(`${WEBUI_API_BASE_URL}/coupons/create`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+		body: JSON.stringify(data)
+	})
+		.then(async (res) => { if (!res.ok) throw await res.json(); return res.json(); })
+		.catch((err) => { console.error(err); error = err.detail; return null; });
+	if (error) throw error;
+	return res;
+};
+
+export const createBulkCoupons = async (token: string, data: { count: number; days: number; max_usage: number; prefix?: string; note?: string }) => {
+	let error = null;
+	const res = await fetch(`${WEBUI_API_BASE_URL}/coupons/create-bulk`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+		body: JSON.stringify(data)
+	})
+		.then(async (res) => { if (!res.ok) throw await res.json(); return res.json(); })
+		.catch((err) => { console.error(err); error = err.detail; return null; });
+	if (error) throw error;
+	return res;
+};
+
+export const deleteCoupon = async (token: string, couponId: string) => {
+	let error = null;
+	const res = await fetch(`${WEBUI_API_BASE_URL}/coupons/${couponId}`, {
+		method: 'DELETE',
+		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+	})
+		.then(async (res) => { if (!res.ok) throw await res.json(); return res.json(); })
+		.catch((err) => { console.error(err); error = err.detail; return null; });
+	if (error) throw error;
+	return res;
+};
+
+export const redeemCoupon = async (token: string, code: string) => {
+	let error = null;
+	const res = await fetch(`${WEBUI_API_BASE_URL}/coupons/redeem`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+		body: JSON.stringify({ code })
+	})
+		.then(async (res) => { if (!res.ok) throw await res.json(); return res.json(); })
+		.catch((err) => { console.error(err); error = err.detail; return null; });
+	if (error) throw error;
+	return res;
+};
