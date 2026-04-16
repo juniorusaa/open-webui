@@ -98,6 +98,7 @@ from open_webui.routers import (
     scim,
     terminals,
     coupons,
+    sidebar_links,
 )
 
 from open_webui.routers.retrieval import (
@@ -1524,6 +1525,7 @@ if ENABLE_ADMIN_ANALYTICS:
 app.include_router(utils.router, prefix='/api/v1/utils', tags=['utils'])
 app.include_router(terminals.router, prefix='/api/v1/terminals', tags=['terminals'])
 app.include_router(coupons.router, prefix='/api/v1/coupons', tags=['coupons'])
+app.include_router(sidebar_links.router, prefix='/api/v1/sidebar-links', tags=['sidebar-links'])
 
 # SCIM 2.0 API for identity management
 if ENABLE_SCIM:

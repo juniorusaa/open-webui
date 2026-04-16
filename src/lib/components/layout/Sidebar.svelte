@@ -55,6 +55,7 @@
 	import Tooltip from '../common/Tooltip.svelte';
 	import Folders from './Sidebar/Folders.svelte';
 	import { getChannels, createNewChannel } from '$lib/apis/channels';
+	import { getSidebarLinks } from '$lib/apis/sidebar-links';
 	import ChannelModal from './Sidebar/ChannelModal.svelte';
 	import ChannelItem from './Sidebar/ChannelItem.svelte';
 	import PencilSquare from '../icons/PencilSquare.svelte';
@@ -86,6 +87,8 @@
 	let pinnedModels = [];
 
 	let showPinnedModels = false;
+	let customLinks: any[] = [];
+	let showCustomLinks = true;
 	let showChannels = false;
 	let showFolders = false;
 
@@ -190,6 +193,11 @@
 			await initFolders();
 			showFolders = true;
 		}
+	};
+
+	const initCustomLinks = async () => {
+		const res = await getSidebarLinks(localStorage.token).catch(() => null);
+		if (res) customLinks = res;
 	};
 
 	const initChannels = async () => {
@@ -473,6 +481,7 @@
 					) {
 						await initChannels();
 					}
+					await initCustomLinks();
 					await initChatList();
 
 					// Check which chats have active tasks
@@ -1057,7 +1066,36 @@
 					{/if}
 				</div>
 
-				{#if ($models ?? []).length > 0 && (($settings?.pinnedModels ?? []).length > 0 || $config?.default_pinned_models)}
+				{#if customLinks.length > 0}
+				<Folder
+					id="sidebar-custom-links"
+					bind:open={showCustomLinks}
+					className="px-2 mt-0.5"
+					name={$i18n.t('Menü')}
+					chevron={false}
+					dragAndDrop={false}
+				>
+					{#each customLinks as link (link.id)}
+						<a
+							href={link.url}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-850 transition truncate"
+						>
+							{#if link.icon}
+								<span class="text-base">{link.icon}</span>
+							{:else}
+								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 flex-shrink-0">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+								</svg>
+							{/if}
+							<span class="truncate">{link.title}</span>
+						</a>
+					{/each}
+				</Folder>
+			{/if}
+
+			{#if ($models ?? []).length > 0 && (($settings?.pinnedModels ?? []).length > 0 || $config?.default_pinned_models)}
 					<Folder
 						id="sidebar-models"
 						bind:open={showPinnedModels}
